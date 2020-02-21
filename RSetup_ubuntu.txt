@@ -1,0 +1,29 @@
+#on one of the nodes of your hadoop cluster OR on 'edge node' OR on 'external node' that can connect to hadoop cluster
+$apt-get update
+$apt-get install r-base
+#Download rstudio for ubuntu from rstudio.com i.e. https://rstudio.com/products/rstudio/download/#download
+rstudio-1.2.5033-amd64-debian.tar.gz
+
+#untar it, create a softlink, change ownership to a dedicated user and update .bashrc for the user
+export RSTUDIO_HOME=/usr/local/rstudio ##assuming rstudio is the link pointing to RSTUDIO untarred directory
+
+#make sure the node has java installed or
+
+#to update and get Java on ur machine
+sudo apt-get update
+sudo apt-get install default-jre
+sudo apt-get install default-jdk
+
+#to check if R is setup with Java
+sudo R CMD javareconf
+
+launch rstudio as the owner(dedicated user)
+$cd /usr/local/rstudio
+$bin/rstudio
+
+#refer https://github.com/ajaykuma/DataScience_n_R/blob/master/Hadoop_Setup_n_Integ_R_Win.txt 
+# and try downloading some hadoop specific packages in RSTUDIO
+================================================
+#If packages missing
+apt-get install r-cran-latticeextra
+apt-get install r-cran-rjava

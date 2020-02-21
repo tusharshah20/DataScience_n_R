@@ -1,0 +1,522 @@
+R and Hadoop Integration
+
+Setup Hadoop-Single node cluster on Windows
+----------------------------------------
+Set java path on your machine
+edit environment variables> user variables for Win10> 
+#here I copied the jdk directory from C:\Program Files\Java into C:\Java
+JAVA_HOME=C:\Java\jdk1.8.0_221
+# I have downloaded hadoop-2.6.5.tar.gz from http://archive.apache.org/dist/hadoop/common/
+# untarred it in C:\Hadoop 
+HADOOP_HOME=C:\Hadoop\hadoop-2.6.5
+
+#Refer: https://cwiki.apache.org/confluence/display/HADOOP2/Hadoop2OnWindows
+#This link is to build hadoop from src and then edit config files,alternatively..
+
+#Look into: https://github.com/cdarlint/winutils
+--Download 'hadoop.dll' & 'winutils.exe' as per your downloaded version of hadoop
+--copy these into C:\Hadoop\hadoop-2.6.5\bin
+
+#Now edit config files
+#First edit the file hadoop-env.cmd to add the following lines near the end of the file.
+set HADOOP_PREFIX=C:\Hadoop\hadoop-2.6.5
+set HADOOP_CONF_DIR=%HADOOP_PREFIX%\etc\hadoop
+set YARN_CONF_DIR=%HADOOP_CONF_DIR%
+set PATH=%PATH%;%HADOOP_PREFIX%\bin
+
+#Edit or create the file core-site.xml and make sure it has the following configuration key:
+<configuration>
+  <property>
+    <name>fs.default.name</name>
+    <value>hdfs://0.0.0.0:19000</value>
+  </property>
+</configuration>
+
+#Edit or create the file hdfs-site.xml and add the following configuration key:
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>1</value>
+  </property>
+</configuration>
+
+#edit or create the file slaves and make sure it has the following entry:
+localhost
+
+#The default configuration puts the HDFS metadata and data files under \tmp on the current drive. 
+#In the above example this would be c:\tmp. For your first test setup you can just leave it at the default.
+#Example YARN Configuration
+#Edit or create mapred-site.xml under %HADOOP_PREFIX%\etc\hadoop and add the following entries, 
+replacing %USERNAME% with your Windows user name.
+#in my case username is Win10
+
+<configuration>
+
+   <property>
+     <name>mapreduce.job.user.name</name>
+     <value>%USERNAME%</value>
+   </property>
+
+   <property>
+     <name>mapreduce.framework.name</name>
+     <value>yarn</value>
+   </property>
+
+  <property>
+    <name>yarn.apps.stagingDir</name>
+    <value>/user/%USERNAME%/staging</value>
+  </property>
+
+  <property>
+    <name>mapreduce.jobtracker.address</name>
+    <value>local</value>
+  </property>
+
+</configuration>
+
+#edit or create yarn-site.xml and add the following entries:
+<configuration>
+  <property>
+    <name>yarn.server.resourcemanager.address</name>
+    <value>0.0.0.0:8020</value>
+  </property>
+
+  <property>
+    <name>yarn.server.resourcemanager.application.expiry.interval</name>
+    <value>60000</value>
+  </property>
+
+  <property>
+    <name>yarn.server.nodemanager.address</name>
+    <value>0.0.0.0:45454</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+
+  <property>
+    <name>yarn.server.nodemanager.remote-app-log-dir</name>
+    <value>/app-logs</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.log-dirs</name>
+    <value>/dep/logs/userlogs</value>
+  </property>
+
+  <property>
+    <name>yarn.server.mapreduce-appmanager.attempt-listener.bindAddress</name>
+    <value>0.0.0.0</value>
+  </property>
+
+  <property>
+    <name>yarn.server.mapreduce-appmanager.client-service.bindAddress</name>
+    <value>0.0.0.0</value>
+  </property>
+
+  <property>
+    <name>yarn.log-aggregation-enable</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>yarn.log-aggregation.retain-seconds</name>
+    <value>-1</value>
+  </property>
+
+  <property>
+    <name>yarn.application.classpath</name>
+    <value>%HADOOP_CONF_DIR%,%HADOOP_COMMON_HOME%/share/hadoop/common/*,%HADOOP_COMMON_HOME%/share/hadoop/common/lib/*,%HADOOP_HDFS_HOME%/share/hadoop/hdfs/*,%HADOOP_HDFS_HOME%/share/hadoop/hdfs/lib/*,%HADOOP_MAPRED_HOME%/share/hadoop/mapreduce/*,%HADOOP_MAPRED_HOME%/share/hadoop/mapreduce/lib/*,%HADOOP_YARN_HOME%/share/hadoop/yarn/*,%HADOOP_YARN_HOME%/share/hadoop/yarn/lib/*</value>
+  </property>
+</configuration>
+
+Initialize Environment Variables
+Run C:\Hadoop\hadoop-2.6.5\etc\hadoop\hadoop-env.cmd to setup environment variables that will be used 
+by the startup scripts and the daemons.
+
+Format the FileSystem
+C:\Hadoop\hadoop-2.6.5>\bin\hdfs namenode -format
+
+This command will print a number of filesystem parameters. Just look for the following two strings to ensure that the format command succeeded.
+14/01/18 08:36:23 INFO namenode.FSImage: Saving image file \tmp\hadoop-username\dfs\name\current\fsimage.ckpt_0000000000000000000 using no compression
+14/01/18 08:36:23 INFO namenode.FSImage: Image file \tmp\hadoop-username\dfs\name\current\fsimage.ckpt_0000000000000000000 of size 200 bytes saved in 0 seconds.
+
+#if hadoop-env.cmd did not set the environment variables
+
+C:\Hadoop\hadoop-2.6.5>set HADOOP_PREFIX=C:\Hadoop\hadoop-2.6.5
+
+C:\Hadoop\hadoop-2.6.5>set HADOOP_CONF_DIR=%HADOOP_PREFIX%\etc\hadoop
+
+C:\Hadoop\hadoop-2.6.5>set YARN_CONF_DIR=%HADOOP_CONF_DIR%
+
+C:\Hadoop\hadoop-2.6.5>set PATH=%PATH%;%HADOOP_PREFIX%\bin
+
+C:\Hadoop\hadoop-2.6.5>cd sbin
+
+C:\Hadoop\hadoop-2.6.5\sbin>start-dfs.cmd
+
+C:\Hadoop\hadoop-2.6.5\sbin>jps
+69572 NameNode
+70296 DataNode
+54188 Jps
+
+Start YARN Daemons and run a YARN job
+C:\Hadoop\hadoop-2.6.5\sbin>start-yarn.cmd
+starting yarn daemons
+
+C:\Hadoop\hadoop-2.6.5\sbin>jps
+65860 NodeManager
+69572 NameNode
+67784 ResourceManager
+70296 DataNode
+71340 Jps
+
+C:\Hadoop\hadoop-2.6.5>hdfs dfs -mkdir /mydata
+C:\Hadoop\hadoop-2.6.5>hdfs dfs -put LICENSE.txt /mydata
+
+C:\Hadoop\hadoop-2.6.5>hdfs dfs -put NOTICE.txt /mydata
+
+C:\Hadoop\hadoop-2.6.5>hdfs dfs -put README.txt /mydata
+
+C:\Hadoop\hadoop-2.6.5>hdfs dfs -ls -R /mydata
+-rw-r--r--   1 Win10 supergroup      84853 2020-01-02 20:32 /mydata/LICENSE.txt
+-rw-r--r--   1 Win10 supergroup      14978 2020-01-02 20:32 /mydata/NOTICE.txt
+-rw-r--r--   1 Win10 supergroup       1366 2020-01-02 20:33 /mydata/README.txt
+
+C:\Hadoop\hadoop-2.6.5>
+
+C:\Hadoop\hadoop-2.6.5>yarn jar share\hadoop\mapreduce\hadoop-mapreduce-examples-2.6.5.jar wordcount /mydata/LICENSE.txt /out
+20/01/02 20:35:23 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
+20/01/02 20:35:24 INFO input.FileInputFormat: Total input paths to process : 1
+20/01/02 20:35:24 INFO mapreduce.JobSubmitter: number of splits:1
+....
+
+C:\Hadoop\hadoop-2.6.5>hdfs dfs -ls /out
+Found 2 items
+-rw-r--r--   1 Win10 supergroup          0 2020-01-02 20:35 /out/_SUCCESS
+-rw-r--r--   1 Win10 supergroup      22001 2020-01-02 20:35 /out/part-r-00000
+
+Access UIs
+http://localhost:50070/
+http://localhost:8088/cluster
+
+========================================
+Setting hadoop (Apache hadoop core distribution on linux machines)
+Follow: https://github.com/ajaykuma/Hadoop-and-Scala-Setup
+=======================================
+
+#Integrating with R on windows
+> Sys.setenv("HADOOP_PREFIX"="C:\\Hadoop\\hadoop-2.6.5")
+> Sys.setenv("HADOOP_CMD"="C:\\Hadoop\\hadoop-2.6.5\\bin\\hadoop")
+> install.packages(c("rJava", "Rcpp", "RJSONIO", "bitops", "digest", 
++                    "functional", "stringr", "plyr", "reshape2", "dplyr", 
++                    "R.methodsS3", "caTools", "Hmisc"))
+
+Restarting R session...
+
+RHadoop packages are dependent on above packages, which should be installed for all users, instead of in personal library. 
+Otherwise, you may see RHadoop jobs fail with an error saying “package *** is not installed”. 
+For example, 
+to make sure that package functional are installed in the correct library, run commands below and it should be in path
+ /Library/Frameworks/R.framework/Versions/3.1/Resources/library/functional, 
+instead of /Users/YOUR_USER_ACCOUNT/Library/R/3.1/library/functional. 
+If it is in the library under your user account, you need to reinstall it 
+to /Library/Frameworks/R.framework/Versions/3.1/Resources/library/. 
+
+If your account has no access to it, use an administrator account.
+The destination library can be set with function install.packages() using argument lib
+
+#note: As of now, I would go with defaults. Will change the location for packages later (if needed)
+
+> install.packages(c("rJava", "Rcpp", "RJSONIO", "bitops", "digest", "functional", "stringr", "plyr", "reshape2", "dplyr", 
+"R.methodsS3", "caTools", "Hmisc"))
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Installing packages into ‘C:/Users/Win10/Documents/R/win-library/3.6’
+(as ‘lib’ is unspecified)
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/rJava_0.9-11.zip'
+Content type 'application/zip' length 832080 bytes (812 KB)
+downloaded 812 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/Rcpp_1.0.3.zip'
+Content type 'application/zip' length 2990177 bytes (2.9 MB)
+downloaded 2.9 MB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/RJSONIO_1.3-1.3.zip'
+Content type 'application/zip' length 1532946 bytes (1.5 MB)
+downloaded 1.5 MB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/bitops_1.0-6.zip'
+Content type 'application/zip' length 38469 bytes (37 KB)
+downloaded 37 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/digest_0.6.23.zip'
+Content type 'application/zip' length 249179 bytes (243 KB)
+downloaded 243 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/functional_0.6.zip'
+Content type 'application/zip' length 21519 bytes (21 KB)
+downloaded 21 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/stringr_1.4.0.zip'
+Content type 'application/zip' length 217039 bytes (211 KB)
+downloaded 211 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/plyr_1.8.5.zip'
+Content type 'application/zip' length 1304658 bytes (1.2 MB)
+downloaded 1.2 MB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/reshape2_1.4.3.zip'
+Content type 'application/zip' length 626330 bytes (611 KB)
+downloaded 611 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/dplyr_0.8.3.zip'
+Content type 'application/zip' length 3225277 bytes (3.1 MB)
+downloaded 3.1 MB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/R.methodsS3_1.7.1.zip'
+Content type 'application/zip' length 77739 bytes (75 KB)
+downloaded 75 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/caTools_1.17.1.3.zip'
+Content type 'application/zip' length 331124 bytes (323 KB)
+downloaded 323 KB
+
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/Hmisc_4.3-0.zip'
+Content type 'application/zip' length 3138796 bytes (3.0 MB)
+downloaded 3.0 MB
+
+package ‘rJava’ successfully unpacked and MD5 sums checked
+package ‘Rcpp’ successfully unpacked and MD5 sums checked
+package ‘RJSONIO’ successfully unpacked and MD5 sums checked
+package ‘bitops’ successfully unpacked and MD5 sums checked
+package ‘digest’ successfully unpacked and MD5 sums checked
+package ‘functional’ successfully unpacked and MD5 sums checked
+package ‘stringr’ successfully unpacked and MD5 sums checked
+package ‘plyr’ successfully unpacked and MD5 sums checked
+package ‘reshape2’ successfully unpacked and MD5 sums checked
+package ‘dplyr’ successfully unpacked and MD5 sums checked
+package ‘R.methodsS3’ successfully unpacked and MD5 sums checked
+package ‘caTools’ successfully unpacked and MD5 sums checked
+package ‘Hmisc’ successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+	C:\Users\Win10\AppData\Local\Temp\Rtmp2zlKHg\downloaded_packages
+
+Note** If you see the below message then rtools can be downloaded from https://cran.r-project.org/bin/windows/Rtools/
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install 
+the appropriate version of Rtools before proceeding.
+
+> ## find your R libraries
+
+> .libPaths()
+[1] "C:/Users/Win10/Documents/R/win-library/3.6" "C:/Program Files/R/R-3.6.2/library"        
+
+> ## check which library a package was installed into
+
+> system.file(package="functional")
+[1] "C:/Users/Win10/Documents/R/win-library/3.6/functional"
+
+> 
+> install.packages("data.table")
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Installing package into ‘C:/Users/Win10/Documents/R/win-library/3.6’
+(as ‘lib’ is unspecified)
+trying URL 'https://cran.rstudio.com/bin/windows/contrib/3.6/data.table_1.12.8.zip'
+Content type 'application/zip' length 2277336 bytes (2.2 MB)
+downloaded 2.2 MB
+
+package ‘data.table’ successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+	C:\Users\Win10\AppData\Local\Temp\Rtmp2zlKHg\downloaded_packages
+
+Download rhdfs from https://github.com/RevolutionAnalytics/RHadoop/wiki/Downloads
+
+> install.packages("C:\\Users\\Win10\\Downloads\\rhdfs_1.0.8.tar.gz", repos=NULL, type="source")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install 
+the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Installing package into ‘C:/Users/Win10/Documents/R/win-library/3.6’
+(as ‘lib’ is unspecified)
+* installing *source* package 'rhdfs' ...
+** using staged installation
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+  converting help for package 'rhdfs'
+    finding HTML links ... done
+    hdfs-file-access                        html  
+    hdfs-file-manip                         html  
+    hdfs.defaults                           html  
+    hdfs.file-level                         html  
+    initialization                          html  
+    rhdfs                                   html  
+    text.files                              html  
+** building package indices
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (rhdfs)
+
+## these packages need to be installed to a library for all users, instead of to a personal library. 
+##Otherwise, you would find R-Hadoop jobs fail on those nodes where packages are not installed in the right library.
+
+=========================
+ > install.packages("C:\\Users\\Win10\\Downloads\\rmr2_3.3.1.tar.gz", repos=NULL, type="source")
+Installing package into ‘C:/Users/Win10/Documents/R/win-library/3.6’
+(as ‘lib’ is unspecified)
+* installing *source* package 'rmr2' ...
+** using staged installation
+** libs
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11  -I"C:/PROGRA~1/R/R-36~1.2/include" -DNDEBUG       `C:/PROGRA~1/R/R-36~1.2/bin/Rscript -e "Rcpp:::CxxFlags()"`   -O2 -Wall  -mtune=generic -c extras.cpp -o extras.o
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11  -I"C:/PROGRA~1/R/R-36~1.2/include" -DNDEBUG       `C:/PROGRA~1/R/R-36~1.2/bin/Rscript -e "Rcpp:::CxxFlags()"`   -O2 -Wall  -mtune=generic -c hbase-to-df.cpp -o hbase-to-df.o
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11  -I"C:/PROGRA~1/R/R-36~1.2/include" -DNDEBUG       `C:/PROGRA~1/R/R-36~1.2/bin/Rscript -e "Rcpp:::CxxFlags()"`   -O2 -Wall  -mtune=generic -c keyval.cpp -o keyval.o
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11  -I"C:/PROGRA~1/R/R-36~1.2/include" -DNDEBUG       `C:/PROGRA~1/R/R-36~1.2/bin/Rscript -e "Rcpp:::CxxFlags()"`   -O2 -Wall  -mtune=generic -c t-list.cpp -o t-list.o
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11  -I"C:/PROGRA~1/R/R-36~1.2/include" -DNDEBUG       `C:/PROGRA~1/R/R-36~1.2/bin/Rscript -e "Rcpp:::CxxFlags()"`   -O2 -Wall  -mtune=generic -c typed-bytes.cpp -o typed-bytes.o
+typed-bytes.cpp: In function 'T unserialize_numeric(const raw&, unsigned int&) [with T = double; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:137:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for(unsigned int i = 0; i < nbytes<double>(); i++) {
+                             ^
+typed-bytes.cpp: In function 'Rcpp::CharacterVector unserialize_character_vector(const raw&, unsigned int&, int)':
+typed-bytes.cpp:188:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for(unsigned int i = 0; i < v_length; i++) {
+                             ^
+typed-bytes.cpp: In function 'Rcpp::List unserialize_list(const raw&, unsigned int&)':
+typed-bytes.cpp:205:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for(unsigned int i = 0; i < length; i++) {
+                             ^
+typed-bytes.cpp: In function 'Rcpp::List unserialize_map(const raw&, unsigned int&)':
+typed-bytes.cpp:221:31: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     for(unsigned int i = 0; i < length; i++) {
+                               ^
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = char; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:191:83:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for(unsigned int i = 0; i < length; i++) {
+                             ^
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = unsigned char; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:244:78:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = bool; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:305:77:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = int; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:308:76:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = long int; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:326:77:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = float; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:329:78:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+typed-bytes.cpp: In instantiation of 'std::vector<_RealType> unserialize_vector(const raw&, unsigned int&, int) [with T = double; raw = std::deque<unsigned char>]':
+typed-bytes.cpp:332:79:   required from here
+typed-bytes.cpp:181:29: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11 -shared -s -static-libgcc -o rmr2.dll tmp.def extras.o hbase-to-df.o keyval.o t-list.o typed-bytes.o -LC:/PROGRA~1/R/R-36~1.2/bin/x64 -lR
+# binaries
+make --no-print-directory -C catwin -f Makefile\
+    CC="C:/Rtools/mingw_64/bin/gcc " CFLAGS="-O2 -Wall  -std=gnu99 -mtune=generic"\
+    CXX="C:/Rtools/mingw_64/bin/g++ -std=gnu++11 " CXXFLAGS="-O2 -Wall  -mtune=generic"\
+    BINDIR="inst/bin/x64"\
+    install-bin
+C:/Rtools/mingw_64/bin/g++ -std=gnu++11  -O2 -Wall  -mtune=generic  -o catwin catwin.c  
+mkdir -p ../../inst/bin/x64
+cp catwin ../../inst/bin/x64
+installing to C:/Users/Win10/Documents/R/win-library/3.6/00LOCK-rmr2/00new/rmr2/libs/x64
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+Warning in library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called 'quickcheck'
+** help
+*** installing help indices
+  converting help for package 'rmr2'
+    finding HTML links ... done
+    bigdataobject                           html  
+    dfs.empty                               html  
+    equijoin                                html  
+    fromdfstodfs                            html  
+    hadoop-setting                          html  
+    keyval                                  html  
+    make.io.format                          html  
+    mapreduce                               html  
+    rmr-package                             html  
+    rmr.options                             html  
+    rmr.sample                              html  
+    rmr.str                                 html  
+    scatter                                 html  
+    status                                  html  
+    tomaptoreduce                           html  
+    vsum                                    html  
+** building package indices
+** testing if installed package can be loaded from temporary location
+Warning: S3 methods 'gorder.default', 'gorder.factor', 'gorder.data.frame', 'gorder.matrix', 'gorder.raw' were declared in NAMESPACE but not found
+** testing if installed package can be loaded from final location
+Warning: S3 methods 'gorder.default', 'gorder.factor', 'gorder.data.frame', 'gorder.matrix', 'gorder.raw' were declared in NAMESPACE but not found
+** testing if installed package keeps a record of temporary installation path
+* DONE (rmr2)
+
+#For working with rhdfs package refer: https://github.com/ajaykuma/DataScience_n_R/blob/master/R_n_hadoop_working.txt
+
+#Running a MR using rmr2
+Sys.setenv("HADOOP_STREAMING"="C:\\Hadoop\\hadoop-2.6.5\\share\\hadoop\\hadoop-streaming-2.6.5.jar")
+Note** If only needed Sys.setenv("JAVA_HOME"="C:\\Java\\jdk1.8.0_221")
+#Running Hadoop Job
+library(rmr2) 
+
+## map function
+map <- function(k,lines) {
+  words.list <- strsplit(lines, '\\s') 
+  words <- unlist(words.list)
+  return( keyval(words, 1) )
+}
+
+## reduce function
+reduce <- function(word, counts) { 
+  keyval(word, sum(counts))
+}
+
+wordcount <- function (input, output=NULL) { 
+  mapreduce(input=input, output=output, input.format="text", 
+            map=map, reduce=reduce)
+}
+
+
+## delete previous result if any
+#system("/Users/hadoop/hadoop-1.1.2/bin/hadoop fs -rmr wordcount/out")
+
+## Submit job
+hdfs.root <- 'wordcount'
+hdfs.data <- file.path(hdfs.root, 'data') 
+hdfs.out <- file.path(hdfs.root, 'out') 
+out <- wordcount(hdfs.data, hdfs.out)
+
+## Fetch results from HDFS
+results <- from.dfs(out)
+
+## check top 30 frequent words
+results.df <- as.data.frame(results, stringsAsFactors=F) 
+colnames(results.df) <- c('word', 'count') 
+head(results.df[order(results.df$count, decreasing=T), ], 30)
+
+
+
+
+
+
+
+
+
+

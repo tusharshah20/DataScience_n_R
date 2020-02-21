@@ -1,0 +1,17 @@
+Calculating Memory Requirements for R Objects
+Because R stores all of its objects physical memory, it is important to be cognizant of how much
+memory is being used up by all of the data objects residing in your workspace. One situation where
+it’s particularly important to understand memory requirements is when you are reading in a new
+dataset into R. Fortunately, it’s easy to make a back of the envelope calculation of how much memory
+will be required by a new dataset.
+For example, suppose I have a data frame with 1,500,000 rows and 120 columns, all of which are
+numeric data. Roughly, how much memory is required to store this data frame? Well, on most
+modern computers double precision floating point numbers are stored using 64 bits of memory, or
+8 bytes. Given that information, you can do the following calculation
+
+1,500,000 × 120 × 8 bytes/numeric = 1,440,000,000 bytes
+= 1,440,000,000 / 220 bytes/MB
+= 1,373.29 MB
+= 1.34 GB
+So the dataset would require about 1.34 GB of RAM.
+=============================

@@ -1,0 +1,55 @@
+Sys.setenv("HADOOP_PREFIX"="C:\\Hadoop\\hadoop-2.6.5")
+Sys.setenv("HADOOP_CMD"="C:\\Hadoop\\hadoop-2.6.5\\bin\\hadoop")
+Sys.setenv("HADOOP_STREAMING"="C:\\Hadoop\\hadoop-2.6.5\\share\\hadoop\\hadoop-streaming-2.6.5.jar")
+Note** if needed Sys.setenv("JAVA_HOME"="C:\\Java\\jdk1.8.0_221")
+> library(rhdfs)
+> hdfs.init()
+> hdfs.ls("/")
+  permission owner      group size          modtime       file
+1 drwxr-xr-x Win10 supergroup    0 2020-01-02 20:33    /mydata
+2 drwxr-xr-x Win10 supergroup    0 2020-01-03 16:16   /newdata
+3 drwx------ Win10 supergroup    0 2020-01-02 20:35       /tmp
+4 drwxr-xr-x Win10 supergroup    0 2020-01-02 22:12      /user
+5 drwxr-xr-x Win10 supergroup    0 2020-01-03 00:04 /wordcount
+
+> hdfs.mkdir("/newdataN")
+[1] TRUE
+
+> hdfs.ls("/")
+  permission owner      group size          modtime       file
+1 drwxr-xr-x Win10 supergroup    0 2020-01-02 20:33    /mydata
+2 drwxr-xr-x Win10 supergroup    0 2020-01-03 16:16   /newdata
+3 drwxr-xr-x Win10 supergroup    0 2020-01-03 16:26  /newdataN
+4 drwx------ Win10 supergroup    0 2020-01-02 20:35       /tmp
+5 drwxr-xr-x Win10 supergroup    0 2020-01-02 22:12      /user
+6 drwxr-xr-x Win10 supergroup    0 2020-01-03 00:04 /wordcount
+
+> hdfs.rmr("/newdata")
+[1] TRUE
+
+> hdfs.ls("/")
+  permission owner      group size          modtime       file
+1 drwxr-xr-x Win10 supergroup    0 2020-01-02 20:33    /mydata
+2 drwxr-xr-x Win10 supergroup    0 2020-01-03 16:26  /newdataN
+3 drwx------ Win10 supergroup    0 2020-01-02 20:35       /tmp
+4 drwxr-xr-x Win10 supergroup    0 2020-01-02 22:12      /user
+5 drwxr-xr-x Win10 supergroup    0 2020-01-03 00:04 /wordcount
+
+> hdfs.put("C:\\Hadoop\\hadoop-2.6.5\\LICENSE.txt","newdata",dstFS = hdfs.defaults("fs"))
+[1] TRUE
+
+> hdfs.ls("/user/Win10")
+  permission owner      group  size          modtime                  file
+1 -rw-r--r-- Win10 supergroup 84853 2020-01-03 16:28   /user/Win10/newdata
+2 drwxr-xr-x Win10 supergroup     0 2020-01-02 22:12 /user/Win10/wordcount
+> hdfs.put("C:\\Hadoop\\hadoop-2.6.5\\LICENSE.txt","/newdataN/LICENSE.txt",dstFS = hdfs.defaults("fs"))
+[1] TRUE
+
+> hdfs.ls("/newdataN")
+  permission owner      group  size          modtime                  file
+1 -rw-r--r-- Win10 supergroup 84853 2020-01-03 16:29 /newdataN/LICENSE.txt
+
+>test <- hdfs.cat("/user/Win10/newdata")
+or
+>hdfs.cat("/user/Win10/newdata")
+
